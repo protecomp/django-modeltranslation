@@ -63,7 +63,12 @@ class TranslationOptions(object):
         self.local_fields = dict((f, set()) for f in self.fields)
         self.fields = dict((f, set()) for f in self.fields)
 
-        # Validation
+    def validate(self):
+        """
+        Perform options validation.
+        """
+        # TODO: at the moment only required_languages is validated.
+        # Maybe check other options as well?
         if self.required_languages:
             if isinstance(self.required_languages, (tuple, list)):
                 self._check_languages(self.required_languages)
@@ -233,6 +238,9 @@ class Translator(object):
 
             # Find inherited fields and create options instance for the model.
             opts = self._get_options_for_model(model, opts_class, **options)
+
+            # Now, when all fields are initialized and inherited, validate configuration.
+            opts.validate()
 
             # Mark the object explicitly as registered -- registry caches
             # options of all models, registered or not.
