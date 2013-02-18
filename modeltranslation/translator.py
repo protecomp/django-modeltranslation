@@ -50,6 +50,7 @@ class TranslationOptions(object):
     on a model).
     """
     __metaclass__ = FieldsAggregationMetaClass
+    required_languages = ()
 
     def __init__(self, model):
         """
