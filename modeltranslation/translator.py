@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Manager
 from django.db.models.base import ModelBase
 
+from modeltranslation import settings as mt_settings
 from modeltranslation.fields import TranslationFieldDescriptor, create_translation_field
 from modeltranslation.manager import MultilingualManager, rewrite_lookup_key
 from modeltranslation.utils import build_localized_fieldname
@@ -60,6 +62,22 @@ class TranslationOptions(object):
         self.registered = False
         self.local_fields = dict((f, set()) for f in self.fields)
         self.fields = dict((f, set()) for f in self.fields)
+
+        # Validation
+        if self.required_languages:
+            if isinstance(self.required_languages, (tuple, list)):
+                self._check_languages(self.required_languages)
+            else:
+                self._check_languages(self.required_languages.iterkeys())
+                for fieldnames in self.required_languages.itervalues():
+                    if any(f not in self.fields for f in fieldnames):
+                        raise ImproperlyConfigured(
+                            'Fieldname in required_languages which is not in fields option.')
+
+    def _check_languages(self, languages):
+        if any(l not in mt_settings.AVAILABLE_LANGUAGES for l in languages):
+            raise ImproperlyConfigured(
+                'Language in required_languages which is not in AVAILABLE_LANGUAGES.')
 
     def update(self, other):
         """

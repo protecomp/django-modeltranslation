@@ -105,27 +105,16 @@ class TranslationField(object):
         if trans_opts.required_languages:
             required_languages = trans_opts.required_languages
             if isinstance(trans_opts.required_languages, (tuple, list)):
-                if any(l not in mt_settings.AVAILABLE_LANGUAGES for l in required_languages):
-                    raise ImproperlyConfigured(
-                        'Language in required_languages which is not in AVAILABLE_LANGUAGES.')
                 # All fields
                 if self.language in required_languages:
                     self.null = False
                     self.blank = False
-            elif self.language in required_languages.keys():
+            elif self.name in required_languages.get(self.language, ()):
                 # Certain fields only
-                for language, fieldnames in required_languages.iteritems():
-                    if not language in mt_settings.AVAILABLE_LANGUAGES:
-                        raise ImproperlyConfigured(
-                            'Language in required_languages which is not in AVAILABLE_LANGUAGES.')
-                    # TODO: We might have to handle the whole thing through the
-                    # FieldsAggregationMetaClass, as fields can be inherited.
-                    if any(f not in trans_opts.fields for f in fieldnames):
-                        raise ImproperlyConfigured(
-                            'Fieldname in required_languages which is not in fields option.')
-                    if self.language == language and self.name in fieldnames:
-                        self.null = False
-                        self.blank = False
+                # TODO: We might have to handle the whole thing through the
+                # FieldsAggregationMetaClass, as fields can be inherited.
+                self.null = False
+                self.blank = False
 
         # Adjust the name of this field to reflect the language
         self.attname = build_localized_fieldname(self.translated_field.name, self.language)
