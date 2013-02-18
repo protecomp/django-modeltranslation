@@ -105,7 +105,7 @@ class TranslationField(object):
         if trans_opts.required_languages:
             required_languages = trans_opts.required_languages
             if isinstance(trans_opts.required_languages, (tuple, list)):
-                if not any(l in mt_settings.AVAILABLE_LANGUAGES for l in required_languages):
+                if any(l not in mt_settings.AVAILABLE_LANGUAGES for l in required_languages):
                     raise ImproperlyConfigured(
                         'Language in required_languages which is not in AVAILABLE_LANGUAGES.')
                 # All fields
@@ -120,7 +120,7 @@ class TranslationField(object):
                             'Language in required_languages which is not in AVAILABLE_LANGUAGES.')
                     # TODO: We might have to handle the whole thing through the
                     # FieldsAggregationMetaClass, as fields can be inherited.
-                    if not any(f in trans_opts.fields for f in fieldnames):
+                    if any(f not in trans_opts.fields for f in fieldnames):
                         raise ImproperlyConfigured(
                             'Fieldname in required_languages which is not in fields option.')
                     if self.language == language and self.name in fieldnames:
