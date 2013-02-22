@@ -73,14 +73,15 @@ class TranslationOptions(object):
             if isinstance(self.required_languages, (tuple, list)):
                 self._check_languages(self.required_languages)
             else:
-                self._check_languages(self.required_languages.iterkeys())
+                self._check_languages(self.required_languages.iterkeys(), extra=('default',))
                 for fieldnames in self.required_languages.itervalues():
                     if any(f not in self.fields for f in fieldnames):
                         raise ImproperlyConfigured(
                             'Fieldname in required_languages which is not in fields option.')
 
-    def _check_languages(self, languages):
-        if any(l not in mt_settings.AVAILABLE_LANGUAGES for l in languages):
+    def _check_languages(self, languages, extra=()):
+        correct = mt_settings.AVAILABLE_LANGUAGES + list(extra)
+        if any(l not in correct for l in languages):
             raise ImproperlyConfigured(
                 'Language in required_languages which is not in AVAILABLE_LANGUAGES.')
 

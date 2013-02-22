@@ -109,12 +109,18 @@ class TranslationField(object):
                 if self.language in required_languages:
                     self.null = False
                     self.blank = False
-            elif self.name in required_languages.get(self.language, ()):
+            else:
                 # Certain fields only
-                # TODO: We might have to handle the whole thing through the
-                # FieldsAggregationMetaClass, as fields can be inherited.
-                self.null = False
-                self.blank = False
+                # Try current language - if not present, try 'default' key
+                try:
+                    langs = required_languages[self.language]
+                except KeyError:
+                    langs = required_languages.get('default', ())
+                if self.name in langs:
+                    # TODO: We might have to handle the whole thing through the
+                    # FieldsAggregationMetaClass, as fields can be inherited.
+                    self.null = False
+                    self.blank = False
 
         # Adjust the name of this field to reflect the language
         self.attname = build_localized_fieldname(self.translated_field.name, self.language)
