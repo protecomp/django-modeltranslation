@@ -47,7 +47,7 @@ except ImportError:
 request = None
 
 # How much models are registered for tests.
-TEST_MODELS = 22
+TEST_MODELS = 23
 
 
 class reload_override_settings(override_settings):
@@ -1909,3 +1909,46 @@ class TestManager(ModeltranslationTestBase):
         # Restore previous state
         reload(mt_settings)
         self.assertEqual(False, mt_settings.AUTO_POPULATE)
+
+
+class TestRequired(ModeltranslationTestBase):
+    def assertRequired(self, field_name):
+        self.assertFalse(self.opts.get_field(field_name).blank)
+
+    def assertNotRequired(self, field_name):
+        self.assertTrue(self.opts.get_field(field_name).blank)
+
+    def test_required(self):
+        self.opts = models.RequiredModel._meta
+
+        # All non required
+        self.assertNotRequired('non_req')
+        self.assertNotRequired('non_req_en')
+        self.assertNotRequired('non_req_de')
+
+        # Original required, but translated fields not - default behaviour
+        self.assertRequired('req')
+        self.assertNotRequired('req_en')
+        self.assertNotRequired('req_de')
+
+        # Set all translated field required
+        self.assertRequired('req_reg')
+        self.assertRequired('req_reg_en')
+        self.assertRequired('req_reg_de')
+
+        # Set some translated field required
+        self.assertRequired('req_en_reg')
+        self.assertRequired('req_en_reg_en')
+        self.assertNotRequired('req_en_reg_de')
+
+        # Test validation
+        inst = models.RequiredModel()
+        inst.req = 'abc'
+        inst.req_reg = 'def'
+        try:
+            inst.full_clean()
+        except ValidationError as e:
+            error_fields = set(e.message_dict.keys())
+            self.assertEqual(set(('req_reg_en', 'req_en_reg', 'req_en_reg_en')), error_fields)
+        else:
+            self.fail('ValidationError not raised!')
