@@ -1947,7 +1947,7 @@ class TestRequired(ModeltranslationTestBase):
         inst.req_reg = 'def'
         try:
             inst.full_clean()
-        except ValidationError as e:
+        except ValidationError, e:
             error_fields = set(e.message_dict.keys())
             self.assertEqual(set(('req_reg_en', 'req_en_reg', 'req_en_reg_en')), error_fields)
         else:
