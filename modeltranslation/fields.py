@@ -78,6 +78,23 @@ def field_factory(baseclass):
 
     return TranslationFieldSpecific
 
+def should_field_be_null(field):
+    """
+    Check if the given field should be null or not
+    """
+    initial_predicate = mt_settings.NULL_SETTINGS[mt_settings.EVERY_FIELD]
+    result = initial_predicate(field)
+
+    field_class = type(field)
+    field_class_name = '.'.join([field_class.__module__, field_class.__name__])
+
+    # TODO: add some validity check of the settings for debugging
+    # Check if there is an override for this particular field class
+    predicate = mt_settings.NULL_SETTINGS.get(field_class_name)
+    if predicate:
+        result = predicate(field)
+
+    return result
 
 class TranslationField(object):
     """
@@ -109,13 +126,11 @@ class TranslationField(object):
         if empty_value is NONE:
             self.empty_value = None if translated_field.null else ''
 
-        # Translation are always optional (for now - maybe add some parameters
-        # to the translation options for configuring this)
-
-        if not isinstance(self, fields.BooleanField):
-            # TODO: Do we really want to enforce null *at all*? Shouldn't this
-            # better honour the null setting of the translated field?
+        # Translation are usually optional -- check if the field should be 
+        # kept nullable
+        if should_field_be_null(translated_field):
             self.null = True
+
         self.blank = True
 
         # Adjust the name of this field to reflect the language

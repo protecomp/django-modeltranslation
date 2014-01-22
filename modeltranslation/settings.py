@@ -53,3 +53,12 @@ for key, value in FALLBACK_LANGUAGES.items():
 ENABLE_FALLBACKS = getattr(settings, 'MODELTRANSLATION_ENABLE_FALLBACKS', True)
 
 LOADDATA_RETAIN_LOCALE = getattr(settings, 'MODELTRANSLATION_LOADDATA_RETAIN_LOCALE', True)
+
+# A magical string literal to represent all fields in the NULL_SETTINGS
+EVERY_FIELD = '*'
+
+_default_null_settings = {
+    EVERY_FIELD: lambda field: True, # the default value. Override with care.
+    'django.db.models.fields.BooleanField': lambda field: False,
+}
+NULL_SETTINGS = dict(_default_null_settings, **getattr(settings, 'MODELTRANSLATION_NULL_SETTINGS', {}))

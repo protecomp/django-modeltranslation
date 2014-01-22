@@ -3,6 +3,7 @@ import datetime
 from decimal import Decimal
 import os
 import shutil
+from unittest import skip
 import imp
 
 from django import forms
@@ -22,6 +23,7 @@ from django.utils import six
 from django.utils.translation import get_language, override, trans_real
 
 from modeltranslation import admin, settings as mt_settings, translator
+from modeltranslation.fields import should_field_be_null
 from modeltranslation.forms import TranslationModelForm
 from modeltranslation.models import autodiscover
 from modeltranslation.tests import models
@@ -2709,3 +2711,50 @@ class ProxyModelTest(ModeltranslationTestBase):
         self.assertEqual(n.title, m.title)
         self.assertEqual(n.title_de, m.title_de)
         self.assertEqual(n.title_en, m.title_en)
+
+
+class NullSettingsTestBase(ModeltranslationTestBase):
+    MAKE_CHAR_NON_NULL = {
+            'django.db.models.fields.CharField': lambda field: False,
+        }
+    def translate(self, field):
+        "Get some translation of the given field"
+        # Use German
+        translated_field_name = '%s_de' % field.name
+        return field.model._meta.get_field(translated_field_name)
+
+    @property
+    def boolean_field(self):
+        return models.OtherFieldsModel._meta.get_field('boolean')
+
+    @property
+    def char_field(self):
+        return models.TestModel._meta.get_field('title')
+
+
+class NullSettingsTest(NullSettingsTestBase):
+    def test_boolean(self):
+        "Test that BooleanField is null=False by default"
+        self.assertFalse(self.translate(self.boolean_field).null)
+
+    def test_char_field_null_by_default(self):
+        "Test that translation fields for CharField are null=True"
+        self.assertTrue(self.translate(self.char_field).null)
+
+    def test_should_field_be_null(self):
+        "Test the utility function `should_field_be_null`"
+        # null=True by default
+        self.assertTrue(should_field_be_null(self.char_field))
+
+    def test_should_field_be_null_override(self):
+        "Test the utility function `should_field_be_null` with a override"
+        with reload_override_settings(MODELTRANSLATION_NULL_SETTINGS=self.MAKE_CHAR_NON_NULL):
+            self.assertFalse(should_field_be_null(self.char_field))
+
+# TODO: The override doesn't seem to refresh the Django models
+@skip
+@override_settings(MODELTRANSLATION_NULL_SETTINGS=NullSettingsTest.MAKE_CHAR_NON_NULL)
+class NullSettingsOverrideTest(NullSettingsTestBase):
+    def test_char_field_null_override(self):
+        "Test that the null override for CharField works"
+        self.assertFalse(self.translate(self.char_field).null)
